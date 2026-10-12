@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="badge">AI / ML PROJECT</div>
+            <h1>📰 Fake News Detection System</h1>
+            <p class="subtitle">Enter a news headline or article and get an ML-based prediction.</p>
+
+            <textarea id="newsText" placeholder="Paste news text here..."></textarea>
+            <button id="checkBtn" onclick="checkNews()">Check News</button>
+
+            <div id="result" class="result hidden">
+                <div id="resultLabel"></div>
+                <div id="confidence"></div>
+                <p id="note"></p>
+            </div>
+
+            <div class="examples">
+                <button onclick="useExample(0)">Real example</button>
+                <button onclick="useExample(1)">Fake example</button>
+            </div>
+
+            <p class="disclaimer">
+                ⚠️ Educational project: the result is an ML prediction, not a definitive fact-check.
+            </p>
+        </div>
+    </div>
+
+<script>
+const examples = [
+    "The transport department announced revised bus schedules that will take effect from Monday.",
+    "Scientists confirm that drinking one glass of ordinary water can permanently increase human intelligence by fifty percent."
+];
+
+function useExample(i) {
+    document.getElementById("newsText").value = examples[i];
+}
+
+async function checkNews() {
+    const text = document.getElementById("newsText").value.trim();
+    const result = document.getElementById("result");
+    const label = document.getElementById("resultLabel");
+    const confidence = document.getElementById("confidence");
+    const note = document.getElementById("note");
+
+    if (text.length < 20) {
+        alert("Please enter at least 20 characters of news text.");
+        return;
+    }
+
+    document.getElementById("checkBtn").disabled = true;
+    document.getElementById("checkBtn").textContent = "Checking...";
+
+    try {
+        const response = await fetch("/predict", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({text})
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.message);
+            return;
+        }
+
+        result.classList.remove("hidden");
+        label.textContent = data.label;
+        label.className = data.label === "FAKE NEWS" ? "fake" : "real";
+        confidence.textContent = "Model confidence: " + data.confidence + "%";
+        note.textContent = data.note;
+    } catch (error) {
+        alert("Could not connect to the server. Make sure Flask is running.");
+    } finally {
+        document.getElementById("checkBtn").disabled = false;
+        document.getElementById("checkBtn").textContent = "Check News";
+    }
+}
+</script>
+</body>
+</html>
